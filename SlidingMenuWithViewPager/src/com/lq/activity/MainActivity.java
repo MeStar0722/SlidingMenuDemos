@@ -5,21 +5,21 @@ import java.util.ArrayList;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.SimpleOnPageChangeListener;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 
-import com.lq.fragment.ColorFragment;
 import com.lq.fragment.ColorMenuFragment;
-import com.lq.fragment.MusicPlayFragment;
 import com.slidingmenu.lib.SlidingMenu;
 
 public class MainActivity extends FragmentActivity {
 	private SlidingMenu mSlidingMenu = null;
 	private ViewPager mViewPager = null;
-	private ArrayList<Fragment> mfragmentList = null;
+	private ArrayList<View> mPageList = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -50,12 +50,13 @@ public class MainActivity extends FragmentActivity {
 	}
 
 	private void initViewPager() {
-		mfragmentList = new ArrayList<Fragment>();
-		mfragmentList.add(new ColorFragment(R.color.red));
-		mfragmentList.add(new MusicPlayFragment());
+		LayoutInflater inflater = getLayoutInflater();
+		mPageList = new ArrayList<View>();
+		mPageList.add(inflater.inflate(R.layout.layout_content, null));
+		mPageList.add(inflater.inflate(R.layout.layout_musicplay, null));
 
 		mViewPager = (ViewPager) findViewById(R.id.viewpager);
-		mViewPager.setAdapter(new MyPagerAdapter(getSupportFragmentManager()));
+		mViewPager.setAdapter(new MyPagerAdapter());
 		mViewPager.setCurrentItem(0);
 		mViewPager.setOnPageChangeListener(new SimpleOnPageChangeListener() {
 			@Override
@@ -78,7 +79,6 @@ public class MainActivity extends FragmentActivity {
 	private void initPopulateFragments() {
 		FragmentTransaction fragmentTransaction = getSupportFragmentManager()
 				.beginTransaction();
-		// MenuFragment menuFragment = new MenuFragment();
 		fragmentTransaction.replace(R.id.frame_menu, new ColorMenuFragment());
 		fragmentTransaction.commit();
 	}
@@ -87,30 +87,33 @@ public class MainActivity extends FragmentActivity {
 		return mSlidingMenu;
 	}
 
-	class MyPagerAdapter extends FragmentPagerAdapter {
-
-		public MyPagerAdapter(FragmentManager fm) {
-			super(fm);
-		}
-
-		@Override
-		public Fragment getItem(int arg0) {
-			return (mfragmentList == null || mfragmentList.size() == 0) ? null
-					: mfragmentList.get(arg0);
-		}
-
+	class MyPagerAdapter extends PagerAdapter {
 		@Override
 		public int getCount() {
-			return mfragmentList == null ? 0 : mfragmentList.size();
+			return mPageList.size();
+		}
+
+		@Override
+		public boolean isViewFromObject(View arg0, Object arg1) {
+			return arg0 == arg1;
+		}
+
+		@Override
+		public Object instantiateItem(ViewGroup container, int position) {
+			container.addView(mPageList.get(position));
+			return mPageList.get(position);
+		}
+
+		@Override
+		public void destroyItem(ViewGroup container, int position, Object object) {
+			container.removeView(mPageList.get(position));
 		}
 	}
 
 	public void switchContent(Fragment fragment) {
-		// getSupportFragmentManager().beginTransaction().replace(R.id.content_frame,
-		// fragment).commit();
-		mfragmentList.set(0, fragment);
-		mViewPager.getAdapter().notifyDataSetChanged();
-		mViewPager.setCurrentItem(0);
+		getSupportFragmentManager().beginTransaction()
+				.replace(R.id.frame_content, fragment).addToBackStack(null)
+				.commit();
 		getSlidingMenu().showContent();
 	}
 }
